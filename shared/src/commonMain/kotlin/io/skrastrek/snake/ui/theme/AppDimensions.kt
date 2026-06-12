@@ -45,4 +45,26 @@ object AppDimensions {
     val GlassBorderWidth: Dp = 1.dp
     val SecondaryButtonBorderWidth: Dp = 2.dp
     val GlowRadius: Dp = 8.dp
+
+    // Component sizing
+    /** Hero snake-motif logo on the Start screen. */
+    val LogoSize: Dp = 132.dp
+    /** Circular profile avatar on the Settings screen. */
+    val AvatarSize: Dp = 64.dp
+    /** Icon glyph size in top bars and buttons. */
+    val IconSize: Dp = 24.dp
+    /** Larger icon glyph (brand mark / nav). */
+    val IconSizeLarge: Dp = 28.dp
+    /** Thin divider / hairline. */
+    val Hairline: Dp = 1.dp
+    /** GAME SPEED slider track height. */
+    val SliderTrackHeight: Dp = 8.dp
+    /** GAME SPEED slider thumb diameter. */
+    val SliderThumbSize: Dp = 24.dp
+    /** Ambient background glow blob diameter. */
+    val GlowBlobSize: Dp = 240.dp
+    /** Width of primary action buttons in centered layouts. */
+    val ActionButtonMaxWidth: Dp = 360.dp
+    /** Spacing of the faint ambient background grid. */
+    val BackgroundGridSpacing: Dp = 40.dp
 }

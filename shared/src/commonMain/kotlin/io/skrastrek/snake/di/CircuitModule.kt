@@ -1,20 +1,31 @@
 package io.skrastrek.snake.di
 
 import com.slack.circuit.foundation.Circuit
-import io.skrastrek.snake.ui.game.GamePresenterFactory
-import io.skrastrek.snake.ui.game.GameUiFactory
+import io.skrastrek.snake.ui.SnakePresenterFactory
+import io.skrastrek.snake.ui.SnakeUiFactory
 import org.koin.dsl.module
 
 /**
  * Assembles the Circuit instance from the registered presenter and UI factories.
- * New screens are added by registering their factories here.
+ * New screens are added inside [SnakePresenterFactory] / [SnakeUiFactory].
  */
 val circuitModule = module {
-    factory { GamePresenterFactory(engine = get(), observeHighScore = get(), submitScore = get()) }
+    factory {
+        SnakePresenterFactory(
+            engine = get(),
+            observeHighScore = get(),
+            observeRecentScores = get(),
+            observeSettings = get(),
+            observeProfile = get(),
+            submitScore = get(),
+            updateSettings = get(),
+            resetProgress = get(),
+        )
+    }
     single {
         Circuit.Builder()
-            .addPresenterFactory(get<GamePresenterFactory>())
-            .addUiFactory(GameUiFactory())
+            .addPresenterFactory(get<SnakePresenterFactory>())
+            .addUiFactory(SnakeUiFactory())
             .build()
     }
 }

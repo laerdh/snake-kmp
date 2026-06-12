@@ -1,15 +1,34 @@
 package io.skrastrek.snake.domain.model
 
 /**
- * Game difficulty, expressed as the delay between game ticks. Lower delay means
- * a faster snake. Surfaced in the UI as the pill-shaped difficulty chips.
+ * Game speed tier, chosen via the GAME SPEED slider on the Settings screen.
  *
- * @property label short display label (e.g. shown on a chip).
- * @property tickMillis delay between automatic snake advances.
+ * A faster snake ([tickMillis] lower) is harder, so it also rewards more
+ * [pointsPerApple]. The three tiers map 1:1 onto the slider's 0..2 range via
+ * [sliderIndex] / [fromSliderIndex].
+ *
+ * @property displayName human-readable label shown on the slider (e.g. "Chill").
+ * @property tickMillis delay between automatic snake advances; lower is faster.
+ * @property pointsPerApple score awarded for each apple eaten at this tier.
  */
-enum class Difficulty(val label: String, val tickMillis: Long) {
-    Easy("EASY", 200L),
-    Normal("NORMAL", 130L),
-    Hard("HARD", 85L),
-    Insane("INSANE", 55L),
+enum class Difficulty(
+    val displayName: String,
+    val tickMillis: Long,
+    val pointsPerApple: Int,
+) {
+    Chill(displayName = "Chill", tickMillis = 200L, pointsPerApple = 10),
+    Fast(displayName = "Fast", tickMillis = 110L, pointsPerApple = 25),
+    Insane(displayName = "Insane", tickMillis = 60L, pointsPerApple = 50);
+
+    /** Position of this tier on the 0..2 GAME SPEED slider. */
+    val sliderIndex: Int get() = ordinal
+
+    companion object {
+        /** The tier a fresh install starts on. */
+        val Default: Difficulty = Chill
+
+        /** The tier for a 0..2 slider position, clamped to the valid range. */
+        fun fromSliderIndex(index: Int): Difficulty =
+            entries.getOrElse(index) { Default }
+    }
 }

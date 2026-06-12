@@ -43,6 +43,9 @@ object AppColors {
     val SecondaryContainer = Color(0xFFAA0266)
     val OnSecondaryContainer = Color(0xFFFFBAD3)
 
+    /** Saturated neon magenta for the Game Over glitch title and "new best" badge. */
+    val NeonPink = Color(0xFFFF00CD)
+
     // Tertiary — Cyan (functional accents, borders, power-ups)
     val Tertiary = Color(0xFF4DD8F7)
     val OnTertiary = Color(0xFF003640)

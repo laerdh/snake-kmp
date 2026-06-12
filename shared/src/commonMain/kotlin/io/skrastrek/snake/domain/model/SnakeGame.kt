@@ -19,11 +19,16 @@ enum class GameStatus {
  * Immutable snapshot of a Snake round. Produced exclusively by the game rules in
  * [io.skrastrek.snake.domain.GameEngine]; never mutated in place.
  *
+ * Scoring is split into two figures to match the design: [applesEaten] is the raw
+ * food count, while the displayed "score" is a points total derived from it and
+ * the chosen speed tier (see [io.skrastrek.snake.domain.RoundScore]).
+ *
  * @property snake the snake's body cells, head first. Always non-empty while playing.
  * @property food current food cell, or `null` if the board is momentarily full.
  * @property direction the direction the head will move on the next tick.
  * @property status current [GameStatus].
- * @property score food eaten this round.
+ * @property applesEaten food eaten this round.
+ * @property elapsedMillis accumulated survival time this round, in milliseconds.
  * @property gridWidth number of columns on the board.
  * @property gridHeight number of rows on the board.
  */
@@ -32,7 +37,8 @@ data class SnakeGame(
     val food: GridPoint?,
     val direction: Direction,
     val status: GameStatus,
-    val score: Int,
+    val applesEaten: Int,
+    val elapsedMillis: Long,
     val gridWidth: Int,
     val gridHeight: Int,
 ) {

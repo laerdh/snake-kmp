@@ -17,13 +17,15 @@ class GameEngineTest {
         snake: List<GridPoint>,
         direction: Direction,
         food: GridPoint?,
-        score: Int = 0,
+        applesEaten: Int = 0,
+        elapsedMillis: Long = 0L,
     ) = SnakeGame(
         snake = snake,
         food = food,
         direction = direction,
         status = GameStatus.Running,
-        score = score,
+        applesEaten = applesEaten,
+        elapsedMillis = elapsedMillis,
         gridWidth = 10,
         gridHeight = 10,
     )
@@ -32,7 +34,8 @@ class GameEngineTest {
     fun newGame_startsReadyWithInitialSnake() {
         val game = engine.newGame()
         assertEquals(GameStatus.Ready, game.status)
-        assertEquals(0, game.score)
+        assertEquals(0, game.applesEaten)
+        assertEquals(0L, game.elapsedMillis)
         assertEquals(GameEngine.INITIAL_LENGTH, game.snake.size)
         assertNotNull(game.food)
         assertTrue(game.food !in game.snake, "food must not spawn on the snake")
@@ -59,10 +62,11 @@ class GameEngineTest {
             direction = Direction.Right,
             food = GridPoint(0, 0),
         )
-        val next = engine.tick(game)
+        val next = engine.tick(game, stepMillis = 110L)
         assertEquals(GridPoint(6, 5), next.head)
         assertEquals(3, next.snake.size)
-        assertEquals(0, next.score)
+        assertEquals(0, next.applesEaten)
+        assertEquals(110L, next.elapsedMillis, "each step accumulates survival time")
     }
 
     @Test
@@ -75,7 +79,7 @@ class GameEngineTest {
         val next = engine.tick(game)
         assertEquals(GridPoint(6, 5), next.head)
         assertEquals(4, next.snake.size, "snake grows by one when eating")
-        assertEquals(1, next.score)
+        assertEquals(1, next.applesEaten)
         assertNotNull(next.food, "a new food spawns after eating")
     }
 

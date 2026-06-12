@@ -3,12 +3,10 @@ package io.skrastrek.snake.ui.game
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -18,8 +16,16 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -29,17 +35,22 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
-import io.skrastrek.snake.domain.model.Difficulty
 import io.skrastrek.snake.domain.model.Direction
 import io.skrastrek.snake.domain.model.GameStatus
 import io.skrastrek.snake.domain.model.SnakeGame
+import io.skrastrek.snake.ui.components.BrandWordmark
+import io.skrastrek.snake.ui.components.GlassCard
+import io.skrastrek.snake.ui.components.GridGlyph
+import io.skrastrek.snake.ui.components.NeonBackground
+import io.skrastrek.snake.ui.components.NeonIconButton
+import io.skrastrek.snake.ui.components.PrimaryButton
+import io.skrastrek.snake.ui.format.toPaddedScore
 import io.skrastrek.snake.ui.theme.AppColors
 import io.skrastrek.snake.ui.theme.AppDimensions
-import io.skrastrek.snake.ui.theme.AppTypography
+import io.skrastrek.snake.ui.theme.AppTheme
 import kotlin.math.abs
 
 /**
@@ -49,56 +60,88 @@ import kotlin.math.abs
 @Composable
 fun GameUi(state: GameUiState, modifier: Modifier = Modifier) {
     val eventSink = state.eventSink
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .background(AppColors.Background),
-        contentAlignment = Alignment.Center,
-    ) {
+    NeonBackground(modifier = modifier) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .safeDrawingPadding()
-                .padding(horizontal = AppDimensions.ContainerPadding, vertical = AppDimensions.SpacingMd),
+                .safeDrawingPadding(),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Scoreboard(score = state.game.score, highScore = state.highScore)
-            Spacer(Modifier.height(AppDimensions.SpacingLg))
-            DifficultyChips(
-                selected = state.difficulty,
-                onSelect = { eventSink(GameUiEvent.DifficultyChanged(it)) },
+            GameTopBar(
+                status = state.game.status,
+                onTogglePause = { eventSink(GameUiEvent.TogglePause) },
+                onSettings = { eventSink(GameUiEvent.SettingsClicked) },
             )
-            Spacer(Modifier.height(AppDimensions.SpacingMd))
-            Box(
-                modifier = Modifier.fillMaxWidth().weight(1f),
-                contentAlignment = Alignment.Center,
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = AppDimensions.ContainerPadding, vertical = AppDimensions.SpacingMd),
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                GameBoard(
-                    game = state.game,
-                    onSwipe = { eventSink(GameUiEvent.DirectionChanged(it)) },
+                Scoreboard(score = state.score, highScore = state.highScore)
+                Spacer(Modifier.height(AppDimensions.SpacingLg))
+                Box(
+                    modifier = Modifier.fillMaxWidth().weight(1f),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    GameBoard(
+                        game = state.game,
+                        onSwipe = { eventSink(GameUiEvent.DirectionChanged(it)) },
+                    )
+                }
+                Spacer(Modifier.height(AppDimensions.SpacingMd))
+                DirectionPad(onDirection = { eventSink(GameUiEvent.DirectionChanged(it)) })
+                Spacer(Modifier.height(AppDimensions.SpacingMd))
+                Text(
+                    text = "Swipe to change direction",
+                    style = AppTheme.type.bodyMedium,
+                    color = AppColors.OnSurfaceVariant.copy(alpha = 0.5f),
                 )
             }
-            Spacer(Modifier.height(AppDimensions.SpacingMd))
-            DirectionPad(
-                status = state.game.status,
-                onDirection = { eventSink(GameUiEvent.DirectionChanged(it)) },
-                onTogglePause = { eventSink(GameUiEvent.TogglePause) },
-            )
         }
 
-        when (state.game.status) {
-            GameStatus.GameOver -> GameOverOverlay(
-                score = state.game.score,
-                isNewHighScore = state.isNewHighScore,
-                onRestart = { eventSink(GameUiEvent.Restart) },
-            )
+        if (state.game.status == GameStatus.Paused) {
+            PausedOverlay(onResume = { eventSink(GameUiEvent.TogglePause) })
+        }
+    }
+}
 
-            GameStatus.Paused -> PausedOverlay(
-                onResume = { eventSink(GameUiEvent.TogglePause) },
+/** Top bar: brand mark on the left, pause/resume + settings on the right. */
+@Composable
+private fun GameTopBar(
+    status: GameStatus,
+    onTogglePause: () -> Unit,
+    onSettings: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(AppColors.Background.copy(alpha = 0.7f))
+            .safeDrawingPadding()
+            .padding(horizontal = AppDimensions.SpacingLg, vertical = AppDimensions.SpacingSm),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            GridGlyph(tint = AppColors.Primary)
+            BrandWordmark(modifier = Modifier.padding(start = AppDimensions.SpacingSm))
+        }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            val canPause = status == GameStatus.Running || status == GameStatus.Paused
+            if (canPause) {
+                NeonIconButton(
+                    icon = if (status == GameStatus.Paused) Icons.Filled.PlayArrow else Icons.Filled.Pause,
+                    contentDescription = if (status == GameStatus.Paused) "Resume" else "Pause",
+                    onClick = onTogglePause,
+                    tint = AppColors.Primary,
+                )
+            }
+            NeonIconButton(
+                icon = Icons.Filled.Settings,
+                contentDescription = "Settings",
+                onClick = onSettings,
             )
-
-            GameStatus.Ready -> ReadyHint()
-            GameStatus.Running -> Unit
         }
     }
 }
@@ -113,9 +156,9 @@ private fun Scoreboard(score: Int, highScore: Int, modifier: Modifier = Modifier
         ) {
             ScoreColumn(label = "SCORE", value = score, valueColor = AppColors.Primary)
             ScoreColumn(
-                label = "HIGH",
+                label = "HIGH SCORE",
                 value = highScore,
-                valueColor = AppColors.OnSurface,
+                valueColor = AppColors.Secondary,
                 labelColor = AppColors.Secondary,
                 alignEnd = true,
             )
@@ -132,42 +175,13 @@ private fun ScoreColumn(
     alignEnd: Boolean = false,
 ) {
     Column(horizontalAlignment = if (alignEnd) Alignment.End else Alignment.Start) {
-        Text(text = label, style = AppTypography.LabelSmall, color = labelColor)
+        Text(text = label, style = AppTheme.type.labelSmall, color = labelColor)
         Spacer(Modifier.height(AppDimensions.SpacingXs))
         Text(
-            text = value.toString().padStart(3, '0'),
-            style = AppTypography.ScoreDisplay,
+            text = value.toPaddedScore(),
+            style = AppTheme.type.scoreDisplay,
             color = valueColor,
         )
-    }
-}
-
-/** Pill-shaped difficulty selector chips. */
-@Composable
-private fun DifficultyChips(
-    selected: Difficulty,
-    onSelect: (Difficulty) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Row(
-        modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(AppDimensions.SpacingSm),
-    ) {
-        Difficulty.entries.forEach { difficulty ->
-            val isSelected = difficulty == selected
-            val bg = if (isSelected) AppColors.SecondaryContainer else AppColors.SurfaceContainer
-            val fg = if (isSelected) Color.White else AppColors.OnSurfaceVariant
-            Text(
-                text = difficulty.label,
-                style = AppTypography.LabelSmall,
-                color = fg,
-                modifier = Modifier
-                    .clip(CircleShape)
-                    .background(bg)
-                    .clickable { onSelect(difficulty) }
-                    .padding(horizontal = AppDimensions.SpacingMd, vertical = AppDimensions.SpacingSm),
-            )
-        }
     }
 }
 
@@ -178,13 +192,13 @@ private fun GameBoard(
     onSwipe: (Direction) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val gridColor = AppColors.OutlineVariant.copy(alpha = 0.35f)
+    val gridColor = AppColors.Tertiary.copy(alpha = 0.10f)
     Canvas(
         modifier = modifier
             .fillMaxWidth()
             .aspectRatio(1f)
             .clip(AppDimensions.ShapeOverlay)
-            .background(AppColors.SurfaceContainerLowest)
+            .background(AppColors.SurfaceContainerLowest.copy(alpha = 0.6f))
             .border(
                 width = AppDimensions.GlassBorderWidth,
                 color = AppColors.Tertiary.copy(alpha = 0.30f),
@@ -211,7 +225,6 @@ private fun GameBoard(
         val boardW = cell * game.gridWidth
         val boardH = cell * game.gridHeight
 
-        // Subtle grid
         for (i in 0..game.gridWidth) {
             val x = i * cell
             drawLine(gridColor, Offset(x, 0f), Offset(x, boardH), strokeWidth = 1f)
@@ -251,137 +264,49 @@ private fun GameBoard(
     }
 }
 
-/** On-screen D-pad with a central pause/resume control. */
+/** Faint on-screen d-pad around a decorative centre dot — swipe is primary. */
 @Composable
 private fun DirectionPad(
-    status: GameStatus,
     onDirection: (Direction) -> Unit,
-    onTogglePause: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(AppDimensions.SpacingSm),
     ) {
-        PadButton(symbol = "▲", onClick = { onDirection(Direction.Up) })
-        Row(horizontalArrangement = Arrangement.spacedBy(AppDimensions.SpacingSm)) {
-            PadButton(symbol = "◀", onClick = { onDirection(Direction.Left) })
-            PadButton(
-                symbol = if (status == GameStatus.Paused) "▶︎" else "❚❚",
-                onClick = onTogglePause,
-                accent = true,
-            )
-            PadButton(symbol = "▶", onClick = { onDirection(Direction.Right) })
-        }
-        PadButton(symbol = "▼", onClick = { onDirection(Direction.Down) })
-    }
-}
-
-@Composable
-private fun PadButton(
-    symbol: String,
-    onClick: () -> Unit,
-    accent: Boolean = false,
-) {
-    val border = if (accent) AppColors.Primary else AppColors.Tertiary
-    Box(
-        modifier = Modifier
-            .size(AppDimensions.TouchTarget)
-            .clip(CircleShape)
-            .background(AppColors.SurfaceContainer.copy(alpha = 0.6f))
-            .border(AppDimensions.SecondaryButtonBorderWidth, border.copy(alpha = 0.7f), CircleShape)
-            .clickable(onClick = onClick),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(text = symbol, color = border, style = AppTypography.BodyMedium)
-    }
-}
-
-/** Glassmorphism container: translucent fill + thin cyan stroke. */
-@Composable
-private fun GlassCard(
-    modifier: Modifier = Modifier,
-    content: @Composable () -> Unit,
-) {
-    Box(
-        modifier = modifier
-            .clip(AppDimensions.ShapeOverlay)
-            .background(AppColors.SurfaceContainer.copy(alpha = 0.70f))
-            .border(
-                width = AppDimensions.GlassBorderWidth,
-                color = AppColors.Tertiary.copy(alpha = 0.30f),
-                shape = AppDimensions.ShapeOverlay,
-            ),
-    ) {
-        content()
-    }
-}
-
-/** Centered overlay shown when the round ends. */
-@Composable
-private fun GameOverOverlay(
-    score: Int,
-    isNewHighScore: Boolean,
-    onRestart: () -> Unit,
-) {
-    OverlayScrim {
-        GlassCard {
-            Column(
-                modifier = Modifier.padding(AppDimensions.SpacingXl),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(AppDimensions.SpacingMd),
+        PadArrow(Icons.Filled.KeyboardArrowUp, "Up") { onDirection(Direction.Up) }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            PadArrow(Icons.AutoMirrored.Filled.KeyboardArrowLeft, "Left") { onDirection(Direction.Left) }
+            Box(
+                modifier = Modifier.size(AppDimensions.TouchTarget),
+                contentAlignment = Alignment.Center,
             ) {
-                Text(
-                    text = "GAME OVER",
-                    style = AppTypography.HeadlineLargeMobile,
-                    color = AppColors.Error,
-                    textAlign = TextAlign.Center,
+                Box(
+                    modifier = Modifier
+                        .size(AppDimensions.SpacingSm)
+                        .clip(CircleShape)
+                        .background(AppColors.Tertiary.copy(alpha = 0.4f)),
                 )
-                Text(
-                    text = if (isNewHighScore) "NEW HIGH SCORE: $score" else "SCORE: $score",
-                    style = AppTypography.ScoreDisplay,
-                    color = if (isNewHighScore) AppColors.Secondary else AppColors.OnSurface,
-                )
-                PrimaryButton(label = "PLAY AGAIN", onClick = onRestart)
             }
+            PadArrow(Icons.AutoMirrored.Filled.KeyboardArrowRight, "Right") { onDirection(Direction.Right) }
         }
+        PadArrow(Icons.Filled.KeyboardArrowDown, "Down") { onDirection(Direction.Down) }
     }
 }
 
-/** Centered overlay shown while paused. */
 @Composable
-private fun PausedOverlay(onResume: () -> Unit) {
-    OverlayScrim {
-        GlassCard {
-            Column(
-                modifier = Modifier.padding(AppDimensions.SpacingXl),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(AppDimensions.SpacingMd),
-            ) {
-                Text(text = "PAUSED", style = AppTypography.HeadlineLargeMobile, color = AppColors.Tertiary)
-                PrimaryButton(label = "RESUME", onClick = onResume)
-            }
-        }
-    }
-}
-
-/** Hint shown on a fresh board before the first move. */
-@Composable
-private fun ReadyHint() {
-    Text(
-        text = "SWIPE OR TAP TO START",
-        style = AppTypography.LabelSmall,
-        color = AppColors.OnSurfaceVariant,
-        modifier = Modifier
-            .clip(CircleShape)
-            .background(AppColors.SurfaceContainer.copy(alpha = 0.7f))
-            .padding(horizontal = AppDimensions.SpacingMd, vertical = AppDimensions.SpacingSm),
+private fun PadArrow(icon: ImageVector, description: String, onClick: () -> Unit) {
+    NeonIconButton(
+        icon = icon,
+        contentDescription = description,
+        onClick = onClick,
+        tint = AppColors.OnSurfaceVariant.copy(alpha = 0.4f),
     )
 }
 
+/** Centered glass overlay shown while paused. */
 @Composable
-private fun OverlayScrim(content: @Composable () -> Unit) {
+private fun PausedOverlay(onResume: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -389,23 +314,20 @@ private fun OverlayScrim(content: @Composable () -> Unit) {
             .padding(AppDimensions.ContainerPadding),
         contentAlignment = Alignment.Center,
     ) {
-        content()
+        GlassCard {
+            Column(
+                modifier = Modifier.padding(AppDimensions.SpacingXl),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(AppDimensions.SpacingLg),
+            ) {
+                Text(
+                    text = "PAUSED",
+                    style = AppTheme.type.headlineLargeMobile,
+                    color = AppColors.Tertiary,
+                    textAlign = TextAlign.Center,
+                )
+                PrimaryButton(label = "RESUME", onClick = onResume, leadingIcon = Icons.Filled.PlayArrow)
+            }
+        }
     }
-}
-
-/** Solid electric-lime primary button with black text. */
-@Composable
-private fun PrimaryButton(label: String, onClick: () -> Unit) {
-    Text(
-        text = label,
-        style = AppTypography.BodyMedium.copy(fontWeight = FontWeight.Bold),
-        color = AppColors.OnPrimary,
-        modifier = Modifier
-            .clip(AppDimensions.ShapeCard)
-            .background(AppColors.Primary)
-            .clickable(onClick = onClick)
-            .width(180.dp)
-            .padding(horizontal = AppDimensions.SpacingXl, vertical = AppDimensions.SpacingMd),
-        textAlign = TextAlign.Center,
-    )
 }
