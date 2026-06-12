@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      A bare framework theme with no action bar. All real styling is done in
+      Compose via SnakeTheme; this only sets the window background so there is no
+      white flash before the Compose content draws.
+    -->
+    <style name="Theme.Snake" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/snake_background</item>
+        <item name="android:statusBarColor">@color/snake_background</item>
+        <item name="android:navigationBarColor">@color/snake_background</item>
+    </style>
+</resources>
