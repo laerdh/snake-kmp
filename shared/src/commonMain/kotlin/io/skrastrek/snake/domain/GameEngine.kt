@@ -39,7 +39,8 @@ class GameEngine(
             food = spawnFood(snake),
             direction = Direction.Right,
             status = GameStatus.Ready,
-            score = 0,
+            applesEaten = 0,
+            elapsedMillis = 0L,
             gridWidth = gridWidth,
             gridHeight = gridHeight,
         )
@@ -60,17 +61,22 @@ class GameEngine(
     /**
      * Advance the simulation by one step. Only has an effect while
      * [GameStatus.Running]; otherwise the game is returned unchanged.
+     *
+     * @param stepMillis wall-clock duration this step represents (the active
+     *   [io.skrastrek.snake.domain.model.Difficulty.tickMillis]); accumulated into
+     *   [SnakeGame.elapsedMillis] so survival time can be reported at game over.
      */
-    fun tick(game: SnakeGame): SnakeGame {
+    fun tick(game: SnakeGame, stepMillis: Long = 0L): SnakeGame {
         if (game.status != GameStatus.Running) return game
 
+        val elapsed = game.elapsedMillis + stepMillis
         val newHead = GridPoint(
             x = game.head.x + game.direction.dx,
             y = game.head.y + game.direction.dy,
         )
 
         if (isOutOfBounds(newHead) || isSelfCollision(newHead, game.snake)) {
-            return game.copy(status = GameStatus.GameOver)
+            return game.copy(status = GameStatus.GameOver, elapsedMillis = elapsed)
         }
 
         val ate = newHead == game.food
@@ -84,7 +90,8 @@ class GameEngine(
         return game.copy(
             snake = newSnake,
             food = if (ate) spawnFood(newSnake) else game.food,
-            score = if (ate) game.score + 1 else game.score,
+            applesEaten = if (ate) game.applesEaten + 1 else game.applesEaten,
+            elapsedMillis = elapsed,
         )
     }
 

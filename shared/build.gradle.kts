@@ -1,3 +1,4 @@
+import org.jetbrains.compose.resources.ResourcesExtension
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
@@ -43,6 +44,7 @@ kotlin {
             implementation(compose.runtime)
             implementation(compose.foundation)
             implementation(compose.material3)
+            implementation(compose.materialIconsExtended)
             implementation(compose.ui)
             implementation(compose.components.resources)
             implementation(compose.components.uiToolingPreview)
@@ -74,6 +76,15 @@ kotlin {
             implementation(libs.circuit.test)
         }
     }
+}
+
+// Compose Multiplatform resources: bundled fonts live in
+// `commonMain/composeResources/font/`. Pin the generated accessor class to a
+// known package so call sites can `import io.skrastrek.snake.shared.resources.Res`.
+compose.resources {
+    publicResClass = true
+    packageOfResClass = "io.skrastrek.snake.shared.resources"
+    generateResClass = ResourcesExtension.ResourceClassGeneration.Always
 }
 
 android {

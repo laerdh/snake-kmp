@@ -14,6 +14,13 @@ import androidx.compose.runtime.staticCompositionLocalOf
  */
 private val LocalGlassColors = staticCompositionLocalOf { GlassColors() }
 
+/**
+ * Provides the brand typographic tokens. Defaults to the system-font
+ * [FallbackTypography]; [SnakeTheme] overrides it with the bundled fonts.
+ * Access via [AppTheme.type].
+ */
+private val LocalAppTypography = staticCompositionLocalOf { FallbackTypography }
+
 /** Material 3 [Shapes] mapped from [AppDimensions] corner radii. */
 private val SnakeShapes = Shapes(
     extraSmall = RoundedCornerShape(AppDimensions.RadiusSm),
@@ -25,15 +32,19 @@ private val SnakeShapes = Shapes(
 
 /**
  * Root theme for the Snake app. Wraps Material 3 with the Neo-Retro Arcade
- * color scheme, typography and shapes, and exposes extra glass tokens via
- * [AppTheme].
+ * color scheme, the bundled Sora / JetBrains Mono typography and shapes, and
+ * exposes extra glass + typography tokens via [AppTheme].
  */
 @Composable
 fun SnakeTheme(content: @Composable () -> Unit) {
-    CompositionLocalProvider(LocalGlassColors provides GlassColors()) {
+    val typography = rememberBrandTypography()
+    CompositionLocalProvider(
+        LocalGlassColors provides GlassColors(),
+        LocalAppTypography provides typography,
+    ) {
         MaterialTheme(
             colorScheme = SnakeColorScheme,
-            typography = SnakeTypography,
+            typography = materialTypography(typography),
             shapes = SnakeShapes,
             content = content,
         )
@@ -47,4 +58,10 @@ object AppTheme {
         @Composable
         @ReadOnlyComposable
         get() = LocalGlassColors.current
+
+    /** Brand typographic tokens (Sora / JetBrains Mono). */
+    val type: AppTypographyTokens
+        @Composable
+        @ReadOnlyComposable
+        get() = LocalAppTypography.current
 }

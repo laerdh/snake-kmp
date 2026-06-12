@@ -6,7 +6,7 @@ import com.slack.circuit.foundation.Circuit
 import com.slack.circuit.foundation.CircuitCompositionLocals
 import com.slack.circuit.foundation.NavigableCircuitContent
 import com.slack.circuit.foundation.rememberCircuitNavigator
-import io.skrastrek.snake.ui.game.GameScreen
+import io.skrastrek.snake.ui.start.StartScreen
 import io.skrastrek.snake.ui.theme.SnakeTheme
 import org.koin.compose.koinInject
 
@@ -23,7 +23,7 @@ fun App() {
     SnakeTheme {
         val circuit: Circuit = koinInject()
         CircuitCompositionLocals(circuit) {
-            val backStack = rememberSaveableBackStack(root = GameScreen)
+            val backStack = rememberSaveableBackStack(root = StartScreen)
             val navigator = rememberCircuitNavigator(backStack) { /* root pop: nothing to do */ }
             NavigableCircuitContent(navigator = navigator, backStack = backStack)
         }
